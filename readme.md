@@ -1,1 +1,2 @@
 # Record of Trainee at Shanghai
+> Just after the one-month travle to the serveral colleges that i may spend my post-graduats time there , i decide to train in Shanghai dist Inc. ,the company we have made the plan in June. 
