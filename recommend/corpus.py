@@ -198,5 +198,14 @@ class recommend:
 # print('Get Sim Time:',t4-t3)
 
 def get_res():
-    with open('doc.json','w') as f:
+    with open('doc.json','r') as f:
         doc = json.load(f)
+    with open('res.txt','w') as f:
+        for item in doc:
+            f.writelines('标题:'+item['name']+'的推荐文章为：\n')
+            f.write("\n")
+            for item2 in  item['sim']:
+                f.writelines(doc[item2-1]['name'])
+                f.write("\n")
+            f.write('-------------------------------\n')
+
