@@ -1,19 +1,17 @@
-u# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os
 import codecs
-import re
-import jieba
 import numpy as np 
 from gensim import corpora,models,similarities
-from gensim.test.utils import get_tmpfile 
+from corpus import preprocess, Corpus
 class recommend:
     def __init__(self):
         pass 
     def get_corpus(self,doc):
         corp = []
-        for item in doc:
-            corp.append(dictionary.doc2bow(self.cut(self.clean_doc(item))))
-        return corp
+        for item in text:
+            corp.append(dictionary.doc2bow(pre.cut(pre.clean_doc(item))))
+        self.corp = corp
     def __vectorize(self):
         self.__set_corpus()
         tfidf = models.TfidfModel(self.corp)
@@ -46,12 +44,40 @@ class recommend:
         return [index_com,index_lsi,index_lda]        
 #test
 p = recommend('./doc')
-e 
-for ind,item in  df.iterrows():
-    fname = item['标题']
-    try:
-        with open('./doc/weixin/'+fname+'.txt','w') as f:
-            if type(item['内容']) == 'str':
-                f.write(item['内容'])
-    except FileNotFoundError:
-        continue
+
+ 
+# for ind,item in  df.iterrows():
+#     fname = item['标题']
+#     try:
+#         with open('./doc/weixin/'+fname+'.txt','w') as f:
+#             if type(item['内容']) == 'str':
+#                 f.write(item['内容'])
+#     except FileNotFoundError:
+#         continue
+    
+
+# def wrapper(func):
+#     def inner(x,y):
+#         a = func(x,y)
+#         a +=1
+#         return a
+#     return inner
+# @wrapper
+# def func(a,b):
+#     return a+b
+# func(1,2)
+
+# def log(func):
+#     def inner(*args,**kwargs):
+#         print("Arguments were %s %s" % (args,kwargs))
+#         return func(*args,**kwargs)
+#     return inner
+# @log
+# def fun1(a,x=1,y=2):
+#     return a+x+y
+# @log
+# def fun2():
+#     return 2
+# fun1(1)
+# fun1(1,10,10)
+# fun2()
