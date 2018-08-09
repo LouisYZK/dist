@@ -142,14 +142,14 @@ class Corpus():
         print('----------语料库更新完毕---------')
       
 # test
-# import time
-# t1 = time.time()
-# c = Corpus('./doc/weixin/')
-# t2 = time.time()
-# print('Bulid time:',t2-t1)
-# c.update('./doc/new_test/')
-# t3 = time.time()
-# print('Update tiem :',t3-t2)
+import time
+t1 = time.time()
+c = Corpus('./doc/weixin/')
+t2 = time.time()
+print('Bulid time:',t2-t1)
+c.update('./doc/new_test/')
+t3 = time.time()
+print('Update tiem :',t3-t2)
 
 class recommend:
     def __init__(self):
@@ -193,9 +193,9 @@ class recommend:
         print('----------计算相似文档结束！---------')
 
 # test
-# rec = recommend()
-# t4 = time.time()
-# print('Get Sim Time:',t4-t3)
+rec = recommend()
+t4 = time.time()
+print('Get Sim Time:',t4-t3)
 
 def get_res():
     with open('doc.json','r') as f:
@@ -208,4 +208,17 @@ def get_res():
                 f.writelines(doc[item2-1]['name'])
                 f.write("\n")
             f.write('-------------------------------\n')
-
+get_res()
+print("结果已写入文档")
+def draw():
+    with open('doc.json','r') as f:
+        doc = json.load(f)
+    import networkx as nx
+    G = nx.Graph()
+    for i in range(1,len(doc)+1):
+        G.add_node(str(i))
+    for item in doc:
+        G.add_edge(str(item['id']),str(item['sim'][0]))
+    nx.draw(G,with_labels = True,font_size =11,node_size=10,alpha = 0.6,edge_color = 'k')
+    import matplotlib.pyplot as plt
+    plt.show()
