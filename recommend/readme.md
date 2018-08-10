@@ -46,6 +46,7 @@ class preprocess():
 ### 字典与语料库的构建
 字典就是输入目前所有文本分词结果 dict = [(w1,id),(w2,id),(w3,id),...,(wn,id)]
 而语料的格式是对应文本在字典中生成：
+```json
 corpus = [
     [
         #doc1
@@ -58,6 +59,9 @@ corpus = [
         #doc_n
     ]
 ]
+```
+以上是语料库的基本格式
+
 ```python
 def __set_origin_corpus(self):
         if('dictionary.txt' in os.listdir()):
@@ -194,4 +198,7 @@ heapq.nlargest(n,iter,key)   key和sort一样是作用在iter上的函数
 h = [3,5,6,7,10]
 heapq.nlargest(3,range(len(h)),h.__getitem__)
 # 这个list的内建方法取出index的值，但是不能像ndarray对象一样传入数组
-```
+没有使用数据库，将推荐结果统一写入到了josn文件中。
+
+## rest接口编写
+为方便前端测试访问，先编写出接口的测试版本
