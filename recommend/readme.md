@@ -199,6 +199,39 @@ h = [3,5,6,7,10]
 heapq.nlargest(3,range(len(h)),h.__getitem__)
 # 这个list的内建方法取出index的值，但是不能像ndarray对象一样传入数组
 没有使用数据库，将推荐结果统一写入到了josn文件中。
+```
 
 ## rest接口编写
-为方便前端测试访问，先编写出接口的测试版本
+为方便前端测试访问，先使用Flask框架编写出接口的测试版本：
+
+```Python
+from flask import Flask ,jsonify ,abort,request
+import json
+
+app = Flask(__name__)
+
+@app.route('/doc/<int:doc_id>/recommend_doc',methods = ['GET'])
+def get_rec(doc_id):
+	with open('doc.json','r') as f:
+		doc = json.load(f)
+	for item in doc:
+		if item['id'] == doc_id:
+			sim = set(item['sim'])
+	rec = []
+	for item in doc:
+		rec_item = {}
+		if item['id'] in sim:
+			rec_item['name'] = item['name']
+			rec_item['id'] = item['id']
+			rec_item['url'] = item['url']
+			rec.append(rec_item)
+	return jsonify({'recommed':rec})
+
+if __name__ == '__main__':
+	app.run(debug = True)
+```
+
+接口主要功能是读取json文件，提取响应id文档的推荐文档id
+
+## 计算过程演示
+
