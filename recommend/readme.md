@@ -153,6 +153,38 @@ def update(self,new_dir):
 ```
 ### 向量化与相似度计算模块
 向量化的方式有很多，有基于统计方法的Tf-idf模型，有矩阵计算方法的LDA、LSI模型，有基于神经网络的word2vec模型。根据使用摸底选择了前三个模型进行向量化，计算三个相似度后取平均。当然此模块应先加载前面完成的json文件和corp语料库。
+
+- TF-IDF 向量 ： 
+
+  $$TF-IDF(w,d) = TF(w,d) \cdot IDF(w,d)$$
+
+  $$IDF(w,d) = log(\frac{n_d}{1 + DF(w,d)})$$
+
+  其中$DF(w,d)$是词在所有文本中的概率，他的频率越高，越说明文本间差异度不大，区别意义就越小。
+
+- LDA向量
+  ![](https://ws1.sinaimg.cn/large/6af92b9fgy1fu7velzv1vj20fe06b3yp.jpg)
+
+  LDA是一个为文章提取主题并计算该文本对该主题归属度的概率，是一个三成贝叶斯模型（预料层、文档层和单词层）
+
+  1、为整篇doc选定一个主题分布$\theta$, 而他是在corpus层面上的分布： $\theta \sim Dir(\alpha)$
+
+  2、根据$\theta$ 的分布，为该文档选取一个主题 $z_n \sim Multi(\theta)$ , n的值（也就是主题数）可以自己设定
+
+  3、在单词层面上生成词的概率 $P(w_n|z_n,\beta)$  ($\beta$ 是一个矩阵，主题数×单词数，每一行代表这个主题在各个词的Dir分布)
+
+  由此得出文档的向量：
+
+  $$P(\theta,\vec z,\vec w| \alpha,\beta) = P(\theta |\alpha) \prod_{n=1}^{N}P(z_n|\theta)P(w_n|z_n,\beta)$$
+
+- LSI 向量
+
+  LSI向量是用降维的思想对TF-IDF矩阵进行降为，因为不是方阵pca的特征分解不起作用，故采用奇异值分解的方式：
+
+  $$A_{m \times n} = U_{m \times m}\Sigma_{m\times n}V_{n\times n}$$
+
+  根据奇异值矩阵$\Sigma$取特征向量
+
 ```python
 def __set_corpus(self):
         if not os.path.exists('corpus.pkl'):
@@ -234,4 +266,3 @@ if __name__ == '__main__':
 接口主要功能是读取json文件，提取响应id文档的推荐文档id
 
 ## 计算过程演示
-
