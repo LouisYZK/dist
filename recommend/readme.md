@@ -265,4 +265,13 @@ if __name__ == '__main__':
 
 接口主要功能是读取json文件，提取响应id文档的推荐文档id
 
-## 计算过程演示
+## 计算过程与结果演示
+
+![](https://ws1.sinaimg.cn/large/6af92b9fgy1ftzy0qjanxj20hl06e0tm.jpg)
+
+语料库与字典库的构建与更新
+
+![](https://ws1.sinaimg.cn/large/6af92b9fgy1fu7we9pl32j20p70erjyn.jpg)
+
+推荐结果写入txt.
+
