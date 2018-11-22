@@ -121,7 +121,7 @@ critic = Critic(sess, n_features=N_F, lr=LR_C)     # we need a good teacher, so 
 sess.run(tf.global_variables_initializer())
 
 if OUTPUT_GRAPH:
-    tf.summary.FileWriter("logs/", sess.graph)
+    tf.summary.FileWriter("logs/A3C", sess.graph)
 
 for i_episode in range(MAX_EPISODE):
     s = env.reset()
