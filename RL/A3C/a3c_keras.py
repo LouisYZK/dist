@@ -5,8 +5,8 @@ from keras.layers import *
 from keras import backend as K
 import tensorflow as tf 
 #-- constants
-# ENV = 'CartPole-v0'
-ENV = 'Breakout-v0'
+ENV = 'CartPole-v0'
+# ENV = 'Breakout-v0'
 
 RUN_TIME = 30
 THREADS = 8
@@ -234,7 +234,7 @@ class Environment(threading.Thread):
 
 			if done or self.stop_signal:
 				break
-		env.render()
+		# env.render()
 		print("Total R:", R)
 
 	def run(self):
@@ -247,7 +247,6 @@ class Environment(threading.Thread):
 #---------
 class Optimizer(threading.Thread):
 	stop_signal = False
-
 	def __init__(self):
 		threading.Thread.__init__(self)
 
