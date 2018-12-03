@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-def DeepQNetwork():
-	def __ini__(
+class DeepQNetwork():
+	def __init__(
 			self,
 			n_features,
 			n_actions,
@@ -42,8 +42,8 @@ def DeepQNetwork():
 		self.memory = np.zeros((self.memory_size, 2*n_features +2 ))
 
 		self._build_network()
-		self.e_params = tf.get_collections('eval_net_params')
-		self.t_params = tf.get_collecyions('target_net_params')
+		self.e_params = tf.get_collection('eval_net_params')
+		self.t_params = tf.get_collection('target_net_params')
 
 		self.replace_target_op = [tf.assign(t,e) for t,e in zip(self.t_params, self.e_params)]
 
@@ -61,16 +61,16 @@ def DeepQNetwork():
 		with tf.variable_scope('eval_net'):
 			c_names = ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
 			with tf.variable_scope('l1'):
-				w1 = tf.get_variable('w1',[self.n_features, n_l1], kernel_initializer = w_init, collections = c_names)
-				b1 = tf.get_variable('b1',[1, n_l1], kernel_initializer = b_init, collections = c_names)
+				w1 = tf.get_variable('w1',[self.n_features,n_l1], initializer = w_init, collections = c_names)
+				b1 = tf.get_variable('b1',[1, n_l1], initializer = b_init, collections = c_names)
 				l1 = tf.nn.relu(tf.matmul(self.s, w1) + b1)
 			with tf.variable_scope('l2'):
-				w2 = tf.get_variable('w2',[n_l1, self.n_actions], kernel_initializer = w_init, collections = c_names)
-				b2 = tf.get_variable('b2',[1, self.n_actions], kernel_initializer = b_init, collections = c_names)
+				w2 = tf.get_variable('w2',[n_l1, self.n_actions], initializer = w_init, collections = c_names)
+				b2 = tf.get_variable('b2',[1, self.n_actions], initializer = b_init, collections = c_names)
 				self.q_eval = tf.matmul(l1, w2) + b2
 
 		with tf.variable_scope('loss'):
-			self.loss = tf.reduce_mean(tf.squared_difference(self.q_targte,self.q_eval))
+			self.loss = tf.reduce_mean(tf.squared_difference(self.q_target,self.q_eval))
 
 		with tf.variable_scope('train'):
 			self._tain_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
@@ -79,12 +79,12 @@ def DeepQNetwork():
 		with tf.variable_scope('target_net'):
 			c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
 			with tf.variable_scope('l1'):
-				w1 = tf.get_variable('w1',[self.n_features, n_l1], kernel_initializer = w_init, collections = c_names)
-				b1 = tf.get_variable('b1',[1, n_l1], kernel_initializer = b_init, collections = c_names)
+				w1 = tf.get_variable('w1',[self.n_features, n_l1],initializer = w_init, collections = c_names)
+				b1 = tf.get_variable('b1',[1, n_l1],initializer = b_init, collections = c_names)
 				l1 = tf.nn.relu(tf.matmul(self.s_, w1) + b1)
 			with tf.variable_scope('l2'):
-				w2 = tf.get_variable('w2',[n_l1, self.n_actions], kernel_initializer = w_init, collections = c_names)
-				b2 = tf.get_variable('b2',[1, self.n_actions], kernel_initializer = b_init, collections = c_names)
+				w2 = tf.get_variable('w2',[n_l1, self.n_actions],initializer = w_init, collections = c_names)
+				b2 = tf.get_variable('b2',[1, self.n_actions],initializer = b_init, collections = c_names)
 				self.q_next = tf.matmul(l1, w2) + b2
 
 	def store_transitions(self, s, a, r, s_):
@@ -99,7 +99,7 @@ def DeepQNetwork():
 
 	def choose_action(self, obseravtion):
 		obseravtion = obseravtion[np.newaxis, :]
-		if np.random.uniform() < self.e_greedy:
+		if np.random.uniform() < self.epsilon:
 			action_value = self.sess.run(self.q_eval, feed_dict = {self.s:obseravtion})
 			action = np.argmax(action_value)
 		else:
@@ -120,7 +120,7 @@ def DeepQNetwork():
 		q_next ,q_eval = self.sess.run(
 				[self.q_next, self.q_eval],
 				feed_dict ={
-					self.s:batch_memory[:,:self.n_features]
+					self.s:batch_memory[:,:self.n_features],
 					self.s_:batch_memory[:,-self.n_features:]
 				}
 			)
@@ -146,9 +146,7 @@ if __name__ == '__main__':
 	env = gym.make('CartPole-v0')
 	env = env.unwrapped
 
-	RL = DeepQNetwork(n_actions = env.action_space.n, n_features = env.observation_space.shape[0], 
-		learning_rate = 0.01, e_greedy = 0.9,
-	 replace_target_iter = 100, memory_size = 2000, e_greedy_creament = 0.001)
+	RL = DeepQNetwork(env.observation_space.shape[0], env.action_space.n,learning_rate = 0.01, e_greedy = 0.9,replace_target_iter = 100, memory_size = 2000, e_greedy_increment = 0.001)
 	total_steps = 0
 
 	n_episode = 100
@@ -161,17 +159,17 @@ if __name__ == '__main__':
 			observation_, r , done, info = env.step(action)
 
 			x, x_dot, theta, theta_dot = observation_
-        	r1 = (env.x_threshold - abs(x))/env.x_threshold - 0.8
-        	r2 = (env.theta_threshold_radians - abs(theta))/env.theta_threshold_radians - 0.5
-       		reward = r1 + r2
+			r1 = (env.x_threshold - abs(x))/env.x_threshold - 0.8
+			r2 = (env.theta_threshold_radians - abs(theta))/env.theta_threshold_radians - 0.5
+			reward = r1 + r2
 
-       		RL.restore(observation, action, reward, observation_)
+			RL.store_transitions(observation, action, reward, observation_)
 
-       		ep_r += r
-       		if total_steps > 1000:
-       			RL.learn()
+			ep_r += r
+		if total_steps > 1000:
+			RL.learn()
 
-       		if done:
+			if done:
 				print('episode: ', i_episode,
 					'ep_r: ', round(ep_r, 2),
 					' epsilon: ', round(RL.epsilon, 2))
