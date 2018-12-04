@@ -1,344 +1,156 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Nov 24 12:58:46 2018
-@author: muzhi
-"""
-
-
-
-import tensorflow as tf
-import matplotlib.pyplot as plt
-import gym
 import numpy as np
-import os
-import collections
+import tensorflow as tf
+import gym
+
+np.random.seed(2)
+tf.set_random_seed(2)  # reproducible
+
+# Superparameters
+OUTPUT_GRAPH = False
+MAX_EPISODE = 3000
+DISPLAY_REWARD_THRESHOLD = 200  # renders environment if total episode reward is greater then this threshold
+MAX_EP_STEPS = 1000   # maximum time step in one episode
+RENDER = False  # rendering wastes time
+GAMMA = 0.9     # reward discount in TD error
+LR_A = 0.001    # learning rate for actor
+LR_C = 0.01     # learning rate for critic
+
+env = gym.make('CartPole-v0')
+env.seed(1)  # reproducible
+env = env.unwrapped
+
+N_F = env.observation_space.shape[0]
+N_A = env.action_space.n
 
 
-"""
-A2C
-"""
-
-### shared network 
-
-def build_shared_network(X):
-  # two convolutional layers
-  conv1 = tf.layers.conv2d(
-    inputs=X, filters=64, kernel_size=[4,4], padding="same",
-      activation=tf.nn.relu, name="conv1")
-  pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
-  conv2 = tf.layers.conv2d(
-    pool1, filters=32,  kernel_size=[4,4], padding="same",
-      activation=tf.nn.relu, name="conv2")
-  pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
-
-  # Fully connected layer
-  fc1 = tf.layers.dense(
-    inputs=tf.layers.flatten(pool2),
-    units=128,
-    activation=tf.nn.relu,
-    name="fc1")
-  return fc1
-
-#  # Fully connected layer
-#build_shared_network(x)
-#env = gym.make("Breakout-v0")
-##X=env.reset()
-#X = tf.to_float(X) / 255.0#normalize
-#x = tf.reshape(X,[-1,210,160,3]) 
-###atcor
-  
-"""
-input:  state dims (210,160,3)
-"""
 class Actor(object):
-    ## def network and params
-    def __init__(self, sess, n_action=4, pic_shape=[210,160,3]):
-        ## 
+    def __init__(self, sess, n_features, n_actions, lr=0.001):
         self.sess = sess
-        ##state dims 210,160,3
-        self.pic_shape = pic_shape
-        self.state = tf.placeholder(shape=[None, pic_shape[0], pic_shape[1], pic_shape[2]],
-                                    dtype=tf.uint8, name="state_pic")
-        self.action = tf.placeholder(shape=[None], dtype=tf.int32, name="action")
-        self.td_error= tf.placeholder(shape=[None], dtype=tf.float32, name="td_error")
-        ##state_pic to input data
-        #X = self.state /255.0
-        
-        self.batch_size = tf.shape(self.state)[0]
-        
-        with tf.variable_scope("shared_net"):
-            X = tf.cast(self.state, tf.float32)/ 255.0
-            fc1 = build_shared_network(X)
-           
-        with tf.variable_scope("Actor_net"):
-            self.logits = tf.layers.dense(inputs=fc1, units=n_action, activation=None)
-            self.probs = tf.nn.softmax(self.logits) + 1e-8## make >0
-            #self.pred = {}
-            #here can add entropy to encourage exploration
-            #self.entropy = -tf.reduce_sum(self.probs*tf.log())
-            
-            ##get action's index in prob matrix
-            gather_indices = tf.range(self.batch_size)*tf.shape(self.probs)[1]+self.action
-            
-            
-            ##picked action prob 
-            self.picked_action_probs = tf.gather(tf.reshape(self.probs,[-1]), gather_indices)
-            ##
-            self.loss = tf.reduce_mean(-tf.log(self.picked_action_probs)*self.td_error, name="actor_loss")
-            self.optimizer = tf.train.RMSPropOptimizer(0.00025, 0.99, 0.0, 1e-6)
-            self.train_op = self.optimizer.minimize(self.loss)
-       
-    def choose_action(self, state):
-        
-        state = np.array(state).reshape(-1,210,160,3)
-        self.batch_size = state.shape[0]
-        prob = self.sess.run(self.probs, {self.state: state})
 
-        #prob = actor.sess.run(actor.probs, {actor.state: state})
-        return np.random.choice(np.arange(prob.shape[1]), p=prob.ravel())##choose by prob
-        
-        
-    def update(self, state, action, td_error):
-        
-        state = np.array(state).reshape(-1,210,160,3)
-        action = np.array(action).reshape(-1)
-        td_error = np.array(td_error).reshape(-1)
-        self.batch_size = state.reshape(-1,210,160,3).shape[0]
-        feed_dict = {self.state:state,
-                     self.action:action, self.td_error:td_error}
-        _, loss = self.sess.run([self.train_op, self.loss], feed_dict)
-        print("actor loss: ",loss)
-        
-        #feed_dict = {actor.state:state.reshape(-1,210,160,3), actor.action:action.reshape(-1), actor.td_error:td_error.reshape(-1)}
-        #loss = actor.sess.run(actor.train_op, feed_dict)
+        self.s = tf.placeholder(tf.float32, [1, n_features], "state")
+        self.a = tf.placeholder(tf.int32, None, "act")
+        self.td_error = tf.placeholder(tf.float32, None, "td_error")  # TD_error
 
-        
-        
-    def exchange_net_params(self):
-        pass
-    
-    
-    
+        with tf.variable_scope('Actor'):
+            l1 = tf.layers.dense(
+                inputs=self.s,
+                units=20,    # number of hidden units
+                activation=tf.nn.relu,
+                kernel_initializer=tf.random_normal_initializer(0., .1),    # weights
+                bias_initializer=tf.constant_initializer(0.1),  # biases
+                name='l1'
+            )
 
-###critic
+            self.acts_prob = tf.layers.dense(
+                inputs=l1,
+                units=n_actions,    # output units
+                activation=tf.nn.softmax,   # get action probabilities
+                kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
+                bias_initializer=tf.constant_initializer(0.1),  # biases
+                name='acts_prob'
+            )
+
+        with tf.variable_scope('exp_v'):
+            log_prob = tf.log(self.acts_prob[0, self.a])
+            self.exp_v = tf.reduce_mean(log_prob * self.td_error)  # advantage (TD_error) guided loss
+
+        with tf.variable_scope('train'):
+            self.train_op = tf.train.AdamOptimizer(lr).minimize(-self.exp_v)  # minimize(-exp_v) = maximize(exp_v)
+
+    def learn(self, s, a, td):
+        s = s[np.newaxis, :]
+        feed_dict = {self.s: s, self.a: a, self.td_error: td}
+        _, exp_v = self.sess.run([self.train_op, self.exp_v], feed_dict)
+        return exp_v
+
+    def choose_action(self, s):
+        s = s[np.newaxis, :]
+        probs = self.sess.run(self.acts_prob, {self.s: s})   # get probabilities for all actions
+        return np.random.choice(np.arange(probs.shape[1]), p=probs.ravel())   # return a int
+
+
 class Critic(object):
-    ## def network and params
-    def __init__(self, sess, pic_shape=[210,160,3], discount_factor=0.9, reuse=True):
-        ## 
+    def __init__(self, sess, n_features, lr=0.01):
         self.sess = sess
-        ##original state dims (210,160,3)
-        self.pic_shape = pic_shape
-        self.state = tf.placeholder(shape=[None, pic_shape[0], pic_shape[1], pic_shape[2]], 
-                                    dtype=tf.uint8, name="state_pic")
-        self.reward = tf.placeholder(shape=[None], dtype=tf.float32, name="reward")
-        self.next_value = tf.placeholder(shape=[None], dtype=tf.float32, name="next_value")
-        
-        ##state_pic to input data
-        #X = self.state /255.0
-        self.discount_factor = discount_factor
-        self.batch_size = tf.shape(self.state)[0]
-        
-        with tf.variable_scope("shared_net", reuse=reuse):
-            X = tf.cast(self.state, tf.float32)/ 255.0
-            #X = tf.cast(critic.state, tf.float32)/ 255.0
-            fc1 = build_shared_network(X)
-        with tf.variable_scope("Critic_net"):
-            ## here!!! this should be check carefully
-            self.value = tf.reshape(tf.layers.dense(inputs=fc1, units=1, activation=None),[-1])
-            ##
-            self.td_error = tf.add(tf.add(self.reward, tf.multiply(self.discount_factor, self.next_value)),
-                                     -self.value) 
-            #td_error=tf.add(tf.add(critic.reward, tf.multiply(critic.discount_factor, critic.next_value)),
-                                     #-critic.value) 
-            self.loss = tf.reduce_mean(tf.square(self.td_error), name="critic_loss")
-            #tf.reduce_mean(tf.square(td_error), name="critic_loss")
-            self.optimizer = tf.train.RMSPropOptimizer(0.00025, 0.99, 0.0, 1e-6)
-            self.train_op = self.optimizer.minimize(self.loss)
-    
-    def update(self, state, reward, next_state):
-        state = np.array(state).reshape(-1,210,160,3)
-        reward = np.array(reward).reshape(-1)
-        next_state = np.array(next_state).reshape(-1, 210,160,3)
-        self.batch_size = state.reshape(-1,210,160,3).shape[0]
-        
 
-        next_value = self.sess.run(self.value,{self.state: next_state}).reshape(-1)
-        #print("next_value: ", next_value )
-        td_error, _, loss = self.sess.run([self.td_error, self.train_op, self.loss],
-                                    {self.state:state, 
-                                     self.reward:reward,
-                                     self.next_value:next_value})
-        #next_value = critic.sess.run(critic.value,
-                                     #{critic.state: 
-                   # np.array(next_states).reshape(-critic.batch_size,210,160,3)}).reshape(-1)     
-        #critic.sess.run([critic.td_error, critic.train_op],
-                                   # {critic.state:np.array(states).reshape(-critic.batch_size,210,160,3), 
-                                   #  critic.reward:np.array(rewards).reshape(-1),
-                                   #  critic.next_value:np.array(next_value).reshape(-1)})
+        self.s = tf.placeholder(tf.float32, [1, n_features], "state")
+        self.v_ = tf.placeholder(tf.float32, [1, 1], "v_next")
+        self.r = tf.placeholder(tf.float32, None, 'r')
 
-        #print("td_error ", td_error)
-        #print("train ", _)
-        print("critic loss: ", loss)
-        
-        
-        """
-        td_error =  critic.sess.run([ critic.td_error,  critic.train_op],
-                                    { critic.state:np.array(state).reshape(- critic.batch_size,210,160,3), 
-                                      critic.reward:np.array(reward).reshape(-1),
-                                      critic.next_value:next_value.reshape(-1)})
-       
-        #td_error ,_ = critic.sess.run([critic.td_error, critic.train_op],
-        #                            {critic.state:state.reshape(1,210,160,3),
-        #                             critic.reward:np.array(reward).reshape(-1),
-        #                            critic.next_value:next_value.reshape(-1)})
-        """
-        return np.array(td_error).reshape(-1)
+        with tf.variable_scope('Critic'):
+            l1 = tf.layers.dense(
+                inputs=self.s,
+                units=20,  # number of hidden units
+                activation=tf.nn.relu,  # None
+                # have to be linear to make sure the convergence of actor.
+                # But linear approximator seems hardly learns the correct Q.
+                kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
+                bias_initializer=tf.constant_initializer(0.1),  # biases
+                name='l1'
+            )
 
-    def exchange_net_params(self):
-        pass
-    
+            self.v = tf.layers.dense(
+                inputs=l1,
+                units=1,  # output units
+                activation=None,
+                kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
+                bias_initializer=tf.constant_initializer(0.1),  # biases
+                name='V'
+            )
 
-## pic save
+        with tf.variable_scope('squared_TD_error'):
+            self.td_error = self.r + GAMMA * self.v_ - self.v
+            self.loss = tf.square(self.td_error)    # TD_error = (r+gamma*V_next) - V_eval
+        with tf.variable_scope('train'):
+            self.train_op = tf.train.AdamOptimizer(lr).minimize(self.loss)
+
+    def learn(self, s, r, s_):
+        s, s_ = s[np.newaxis, :], s_[np.newaxis, :]
+
+        v_ = self.sess.run(self.v, {self.s: s_})
+        td_error, _ = self.sess.run([self.td_error, self.train_op],
+                                          {self.s: s, self.v_: v_, self.r: r})
+        return td_error
 
 
-## pic batch 
-        
-    
-## run main
-        
-
-
-
-##path to save pic
-"""        
-PATH_IMG = "/home/muzhi/RL/code/img"
-if not os.path.exists(PATH_IMG):
-    os.mkdir(PATH_IMG)        
-        
-env = gym.make("Breakout-v0")
-sess = tf.Session()
-actor = Actor(sess)
-critic = Critic(sess)
-sess.run(tf.global_variables_initializer())
-state = env.reset()
-next_state = state
-reward = 0.0
-action = 1
-states = [state,state]
-dones = [False,False]
-rewards = [0.0,1.0]
-next_states  = states
-actions = [1,0]
-critic.batch_size
-"""
-
-
-    
-"""
-New Worker
-"""        
-    
-
-
-##
-class Worker(object):
-    def __init__(self, sess, name, env, actor, critic, discount_facor=0.9, num_step=20, max_episode=10):
-        
-        ###def actor and critic
-        self.name = name##z name 没搞懂 
-        self.env = env
-        self.state = self.env.reset()
-        self.Transition = collections.namedtuple("Transition", 
-                                                 ["state", "action", "reward", "next_state", "done"])
-        self.num_step = num_step
-        self.batch_size = 0 #just define the batch_size
-        self.sess = sess
-        self.reward_his = []    ## whole reward in history
-        self.reward_track = []  ##reward per epsiode
-        self.i_episode = 0
-        self.max_episode = max_episode
-
-        with tf.variable_scope(name):
-            
-            self.actor = actor(self.sess)
-            self.critic = critic(self.sess)   
-            
-        #self.copy_params_from_global
-        
-    def run(self):
-            
-        states,actions,next_states,dones,rewards = self.play_n_step(self.num_step) 
-        #states,actions,next_states,dones,rewards = worker.play_n_step(10) 
-        td_error = self.critic.update(states, rewards, next_states) 
-        #td_error = worker.critic.update(states, rewards, next_states)                
-        self.actor.update(states, actions, td_error)
-        
-        if (self.i_episode % 5 ==0)&(self.i_episode>0):
-            self.plot_reward()
-
-    def play_n_step(self,num_step):
-        states = []
-        actions = []
-        next_states = []
-        dones = []
-        rewards = []
-        for i in range(num_step):
-            ##choose action
-            state = self.state
-            action = self.actor.choose_action(state.reshape(-1,210,160,3))
-            #worker.actor.choose_action(state)
-            next_state, reward, done, lives= self.env.step(action)
-            self.env.render()
-            self.reward_track.append(reward)
-            states.append(state)
-            actions.append(action)
-            next_states.append(next_state)
-            dones.append(done)
-            rewards.append(reward)
-                        
-            if done:          
-                self.reward_his.append(self.reward_track)                
-                print("\n Episode",self.i_episode,"has been done\n In this episode the reward is ", sum(self.reward_track))
-                self.reward_track = []
-                self.i_episode += 1
-                self.state = self.env.reset()    
-                break
-            self.state = next_state
-        return states,actions,next_states,dones,rewards
-    
-    def share_convnet_params(self):
-        ##this func will work to share params between workers when there are more than one worker
-        pass
-    
-    def save_to_sampling_pool(self):
-        ##add history information to a fold or a csv
-        pass
-    
-    def plot_reward(self):
-        R = [np.sum(self.reward_his[i]) for i in range(len(self.reward_his))]
-        plt.plot(range(len(self.reward_his)), R)   
-
-
-    
-        
-        ##
-     
-env = gym.make("Breakout-v0")
 sess = tf.Session()
 
-##make 1 worker
-
-worker = Worker(sess, name="worker5", env=env, actor=Actor, critic=Critic)
+actor = Actor(sess, n_features=N_F, n_actions=N_A, lr=LR_A)
+critic = Critic(sess, n_features=N_F, lr=LR_C)     # we need a good teacher, so the teacher should learn faster than the actor
 
 sess.run(tf.global_variables_initializer())
 
-MAX_EPISODE = 10
-while True: 
-    
-    worker.run()   
-    if worker.i_episode >= MAX_EPISODE:
-        break
-        
-        
-        
+if OUTPUT_GRAPH:
+    tf.summary.FileWriter("logs/", sess.graph)
+
+for i_episode in range(MAX_EPISODE):
+    s = env.reset()
+    t = 0
+    track_r = []
+    while True:
+        if RENDER: env.render()
+
+        a = actor.choose_action(s)
+
+        s_, r, done, info = env.step(a)
+
+        if done: r = -20
+
+        track_r.append(r)
+
+        td_error = critic.learn(s, r, s_)  # gradient = grad[r + gamma * V(s_) - V(s)]
+        actor.learn(s, a, td_error)     # true_gradient = grad[logPi(s,a) * td_error]
+
+        s = s_
+        t += 1
+
+        if done or t >= MAX_EP_STEPS:
+            ep_rs_sum = sum(track_r)
+
+            if 'running_reward' not in globals():
+                running_reward = ep_rs_sum
+            else:
+                running_reward = running_reward * 0.95 + ep_rs_sum * 0.05
+            if running_reward > DISPLAY_REWARD_THRESHOLD: RENDER = True  # rendering
+            print("episode:", i_episode, "  reward:", int(running_reward))
+            break

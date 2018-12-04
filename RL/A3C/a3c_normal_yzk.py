@@ -137,16 +137,16 @@ class Worker():
 					else:
 						GLOABL_REWARD_R.append(GLOABL_REWARD_R[-1]*0.9 + 0.1*ep_r)
 					print(self.name, "EP:",GLOBAL_EP, "Reward:", GLOABL_REWARD_R[-1])
-					GLOBAL_EP +=1 
+					GLOBAL_EP +=1    
 					break
 
 if __name__ == '__main__':
 	LR_A = 0.0001
 	LR_C = 0.001
-	SESS = tf.Session()
-
+	# SESS = tf.Session()
+	SESS  = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 	N_WORKERS = multiprocessing.cpu_count()
-	with tf.device("/cpu:0"):
+	with tf.device("/gpu:0"):
 		OPT_A = tf.train.RMSPropOptimizer(LR_A, name='RMSPropA')
 		OPT_C = tf.train.RMSPropOptimizer(LR_C, name='RMSPropC')
 		GLOBAL_AC = ACNet('global_net')  # we only need its params
@@ -171,3 +171,4 @@ if __name__ == '__main__':
 	plt.xlabel('step')
 	plt.ylabel('Total moving reward')
 	plt.show()
+
