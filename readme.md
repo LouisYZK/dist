@@ -20,4 +20,4 @@ The project during my trainee in Shanghai.dist; The artickle recommend system em
 The learning record of RL ,Nov. 2018.
 - **visual**
 
-The exploration of the Updated Methods and Toolkits using python\Javascript. 
+The exploration of the Updated Methods and Toolkits using python\Javascript's library 
