@@ -65,4 +65,69 @@
 > ：“对接口编程，而不是对实现编程”和“优先使用对象组合，而不是类继承”。
 ------ 《设计模式：可复用面向对象软件的基础》
 
+模块也是一等对象，内置globals()函数可以查看当前模块所有内置对象
+
 ## ch7 函数装饰器和闭包
+- 函数装饰器在导入模块时立即执行，而被装饰的函数只在明确调用时运行。大多数装饰器会在内部定义一个函数，然后将其返回。（多数装饰器都会修改函数）
+;装饰器的典型行为：把被装饰的函数替换成新函数，二者接受相同的参数，而且（通常）返回被装饰的函数本该返回的值，同时还会做些额外操作。
+
+- 函数闭包的概念要先明白Python3的变量作用域
+  - Python不要求声明变量，但是嘉定在函数定义体中赋值的变量是局部变量。
+  - 如果在函数中赋值时想让解释器吧某变量当做全局变量，要使用**global**声明。
+
+- 闭包是一种函数，它会保留定义函数时存在的**自由变量**的绑定，这样调用函数时，虽然定义作用域不可用了，但是仍能使用那些绑定。**注意，只有嵌套在其他函数中的函数才可能需要处理不在全局作用域中的外部变量。**
+![](https://ws1.sinaimg.cn/large/6af92b9fgy1fy7s2z1lnhj20nj0bmad0.jpg)
+
+-  Python 3 引入了 nonlocal 声明。它的作用是把变量标记为自由变量，即使在函数中为变量赋予新值了，也会变成自由变量。如果为 nonlocal 声明的变量赋予新值，闭包中保存的绑定会更新。
+```python
+def make_average():
+  count = 0
+  total = 0
+  def averager(new_value):
+    nonlocal count, total
+    count += 1
+    total += new_value
+    return total / count
+  return averager
+```
+
+- 标准库中的装饰器
+  - functools.lru_cache 是非常实用的装饰器，它实现了备忘（memoization）功能。这是一项优化技术，它把耗时的函数的结果保存起来，避免传入相同的参数时重复计算。LRU 三个字母是“LeastRecently Used”的缩写，表明缓存不会无限制增长，一段时间不用的缓存条目会被扔掉。
+  - **因为Python不支持方法的重载** functools.singledispatch 装饰器可以把整体方案拆分成多个模块，甚至可以为你无法修改的类提供专门的函数。使用@singledispatch 装饰的普通函数会变成泛函数（generic function）：根据第一个参数的类型，以不同方式执行相同操作的一组函数。
+
+  ```python
+  from functools import singledispatch
+  from collections import abc
+  import numbers
+  import html
+  @singledispatch ➊
+  def htmlize(obj):
+    content = html.escape(repr(obj))
+    return '<pre>{}</pre>'.format(content)
+  @htmlize.register(str) ➋
+  def _(text): ➌
+    content = html.escape(text).replace('\n', '<br>\n')
+    return '<p>{0}</p>'.format(content)
+  @htmlize.register(numbers.Integral) ➍
+  def _(n):
+    return '<pre>{0} (0x{0:x})</pre>'.format(n)
+  @htmlize.register(tuple) ➎
+  @htmlize.register(abc.MutableSequence)
+  def _(seq):
+    inner = '</li>\n<li>'.join(htmlize(item) for item in seq)
+    return '<ul>\n<li>' + inner + '</li>\n</ul>'
+  ```
+- 参数化装饰器
+  参数化装饰器是指实现对装饰器的传参一般在原先基础上再实现一层嵌套
+
+  ```python
+  def Wrapper(outer_param):
+      def decorate(func):
+          def inner(*args):
+            """
+              内部逻辑
+            """
+          return func
+      return inner
+    return decorate
+  ```
