@@ -220,3 +220,114 @@ slice(a, b, c) 对象，交给 __getitem__ 方法处理。了解这一点之
   - numbers包是数字的抽象基类， 如检查类型： isinstance(x, numbers.Integral)
 
 ## ch12 继承的优缺点
+
+- 直接子类化内置类型(如 dict、list 或 str)容易出错,因为内置类型的方法通常会忽略用户覆盖的方法。不要子类化内置类型,用户自己定义的类应该继承 collections 模块(http://docs.python.org/3/library/collections.html)中的类,例如UserDict、UserList 和 UserString,这些类做了特殊设计,因此易于扩展。
+- 多重继承方法解析顺序
+  - Python 会按照特定的顺序遍历继承图。这个顺序叫方法解析顺序(Method Resolution
+    Order,MRO)。类都有一个名为 __mro__ 的属性,它的值是一个元组,按照方法解析顺序列出各个超类,从当前类一直向上,直到object 类。
+  - 直接在类上调用实例方法时,必须显式传入 self 参数,因为这样访问的是未绑定方法(unbound method)。(**绕过MRO模式**)然而,使用 super() 最安全,也不易过时。调用框架或不受自己控制
+    的类层次结构中的方法时,尤其适合使用 super()。
+
+## ch13 正确重载运算符
+
+## ch14 可迭代对象、迭代器和生成器
+
+- 序列可以迭代的原因:iter函数
+
+  - (1) 检查对象是否实现了 __iter__ 方法,如果实现了就调用它,获取一个迭代器。
+
+  - (2) 如果没有实现 __iter__ 方法,但是实现了 __getitem__ 方法,Python 会创建一个迭代器,尝试按顺序(从索引 0 开始)获取元素。
+  - (3) 如果尝试失败,Python 抛出 TypeError 异常,通常会提示“C objectis not iterable”(C 对象不可迭代),其中 C 是目标对象所属的类。
+  - 任何 Python 序列都可迭代的原因是,它们都实现了 __getitem__ 方法。其实,标准的序列也都实现了 __iter__ 方法,因此你也应该这么做。之所以对 __getitem__ 方法做特殊处理,是为了向后兼容,而未来可能不会再这么做(不过,python3.4还未弃用)
+
+- 可迭代对象与迭代器的对比
+
+  - 明确可迭代的对象和迭代器（__iter__方法返回迭代器）之间的关系:**Python 从可迭代的对象中获取迭代器。**
+
+  - 标准的迭代器接口有两个方法。
+
+    - __next__返回下一个可用的元素,如果没有元素了,抛出 StopIteration异常。
+
+    - __iter__返回 self,以便在应该使用可迭代对象的地方使用迭代器,例如在 for 循环中。
+
+  - ![](https://ws1.sinaimg.cn/large/6af92b9fgy1fyczg3q6rjj20jd0csq4z.jpg)
+
+  - 可迭代的对象有个 __iter__ 方法,每次都实例化一个新的迭代器;而迭代器要实现 __next__ 方法,返回单个元素,此外还要实现 __iter__  方法,返回迭代器本身。因此,**迭代器可以迭代,但是可迭代的对象不是迭代器。**
+
+  - __iter__ 方法可以定义为生成器函数，最好不要返回一个迭代器对象；
+
+- 标准库中的生成器函数
+
+  - itertools.compress(it, selector_it) 并行处理两个可迭代对象：如果selector_it中的元素是真，产出it中对应的元素
+  - itertools.dropwhile(predicate, it)处理it, 跳过产出剩下的各个元素（不再进行进一步检查）
+  - filter(predicate, it)  Python3中的内置函数filter改为返回生成器对象
+  - Itertools.filtefalse(predicate, ir) 与filter函数的逻辑相反， predicate为假时返回元素
+  - itertools.islice(it,start, stop, step) 安生it的惰性切片
+  - itertools.takewhile(predicate , it) pre为真时产出对应的元素，然后立即停止，不做继续检查
+  - itertools.accumulate(it, [func]) 产出累计的总和； 如果提供了func , 那么吧前两个元素传给他，算计结果和下一个元素给他，以此类推
+  - emumerate(it, start = 0) 
+  - map(func , it)
+  - itertools.starmap(func, it)  把it中各个元素传给func, 产出结果， It元素可为多个，以func(*iit)形式调用func
+  - itertools.chain(it1, ..., itN) 先产出it1中的所有元素， 然后产出it2的元素，以此类推，无缝链接在一起
+  - itertools.chain.from_iterable(it) 产出it生成的各个可迭代对象中的元素，无缝链接在一起； it 应该产出可迭代的元素，例如可迭代的对象列表
+  - itertools.product(it1, ..., itN, repaeat = 1) 计算**笛卡尔积**
+  - zip(it1, ...., itN)
+  - zip_longest(it1, ... , itN ,fillvalue = None)
+  - itertools.combinations(it, out_len) 把it产出的out_len个元素组合在一起，然后产出 ; 做$C_m^n$ **组合数逻辑**
+  - itertools.count(start =0, step =1) 无中生有函数
+  - itertools.cyle(it)从It中产出 各个元素，存储各个元素的副本，然后按顺序重复不断产出各个元素
+  - itertools.permutations(it, out_len = None) 吧out_len个it产出的元素排列在一起，然后产出这些排列；**Amn, 排列数逻辑**
+  - itertools.repeat(item , [times])
+  - itertools.groupby(it, key = None) 产出由两个元素组成的元素，形式为(key, group) , 其中key是分组标准， group 是生成器， 用于财产出分组里的元素
+  - reversed(seq) 
+  - itertools.tee(it, n= 2) 产出一个由n个生成器组成的元素，每个生成器用于单独产出输入的可迭代对象中的元素
+
+  > 注意,这一节的示例多次把不同的生成器函数组合在一起使用。这是这些函数的优秀特性:这些函数的参数都是生成器,而返回的结果也是生成器,因此能以很多不同的方式结合在一起使用
+
+- yield from 句法 : 使得生成器函数产出另一个生成器生成的值，避免了嵌套for循环
+
+## ch15  上下文管理和else模块
+
+- for/else、while/else 和 try/else 中的else的作用更接近与then 的意思
+- with 语句的目的是简化 try/finally 模式。这种模式用于保证一段代码运行完毕后执行某项操作,即便那段代码由于异常、return 语句或sys.exit() 调用而中止,也会执行指定的操作。finally 子句中的代码通常用于释放重要的资源,或者还原临时变更的状态。 
+- 上下文协议需要实现__enter__ 和 __exit__ 方法
+- @contextlib.contextmanager 装饰器能减少创建上下文管理器的样板代码量,因为不用编写一个完整的类,定义 __enter__ 和 __exit__ 方法,而只需实现有一个 yield 语句的生成器,生成想让 __enter__ 方法返回的值。
+
+## ch16 协程 （Coroutines）
+
+- 定义：（生成器进化为协程）yield 关键字可以在表达式中使用,而且生成器 API 中增加了 .send(value) 方法。生成器的调用方可以使用 .send(...) 方法发送数据,发送的数据会成为生成器函数中 yield 表达式的值。因此,生成器可以作为协程使用。协程是指一个过程,这个过程与调用方协作,产出由调用方提供的值。
+
+- ![](https://ws1.sinaimg.cn/large/6af92b9fgy1fyd6auknuoj20jg09r781.jpg) 
+
+  先执行yield等号右边
+
+- 示例：计算移动平均
+
+  ```python
+  def averager():
+      total = 0.0
+      count = 0
+      average = None
+      while True: ➊
+          term = yield average ➋
+          total += term
+          count += 1
+          average = total/count
+  ```
+
+- 预激协程的装饰器
+
+  调用协成第一步要先激活，即执行yield语句之前的程序。 因此可以编写预激协程的装饰器，但注意要与yield from兼容
+
+- 生成器对象可以调用throw() 和 close() 方法发送异常给协程
+
+- yield from x 表达式对 x 对象所做的第一件事是,调用 iter(x),从中获取迭代器。因此,x 可以是任何可迭代的对象； yield from 的主要功能是打开双向通道,把最外层的调用方与最内层的子生成器连接起来,这样二者可以直接发送和产出值,还可以直接传入异常,而不用在位于中间的协程中添加大量处理异常的样板代码。有了这个结构,协程可以通过以前不可能的方式委托职责。
+
+## ch17 使用期物处理并发
+
+- concurrent.futures 模块的主要特色是 ThreadPoolExecutor 和ProcessPoolExecutor 类,这两个类实现的接口能分别在不同的线程或进程中执行可调用的对象。这两个类在内部维护着一个工作线程或进程池,以及要执行的任务队列。
+- **GIL 几乎对 I/O 密集型处理无害**:(解释了虽然Python多线程不是真正意义上的多线程，但是在IO密集操作上仍能加速的原因)； 标准库中所有执行阻塞型 I/O 操作的函数,在等待操作系统返回结果时都会释放 GIL。这意味着在 Python 语言这个层次上可以使用多线程,而 I/O 密集型 Python 程序能从中受益:一个 Python 线程等待网络响应时,阻塞型 I/O 函数会释放 GIL,再运行一个线程。
+- futures模块的ProcessPoolExecutor 和 ThreadPoolExecutor 类都实现了通用的Executor 接口,因此使用 concurrent.futures 模块能特别轻松地把基于线程的方案转成基于进程的方案； Process适合**CPU密集型**程序， 而多线程 适合**IO 密集型**程序
+
+## ch18 使用asyncio处理并发
+
