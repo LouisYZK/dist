@@ -19,7 +19,7 @@ NEWSPIDER_MODULE = 'ArticleSpider.spiders'
 #USER_AGENT = 'ArticleSpider (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -64,9 +64,11 @@ ROBOTSTXT_OBEY = True
 
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'ArticleSpider.pipelines.ArticlespiderPipeline': 300,
-#}
+ITEM_PIPELINES = {
+   # 'ArticleSpider.pipelines.ArticlespiderPipeline': 1,
+   # 'ArticleSpider.pipelines.JsonWithEncodingPipeline':2,
+   'ArticleSpider.pipelines.JsonExporterPipeline':2,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
