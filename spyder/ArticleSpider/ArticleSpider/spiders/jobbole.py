@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import scrapy
 import re
+import datetime 
 
 from scrapy.http import Request
 from urllib import parse 
@@ -46,6 +47,10 @@ class JobboleSpider(scrapy.Spider):
         title = response.xpath("//*[@class='entry-header']/h1/text()").extract()[0].strip()
 
         time =  response.css(".entry-meta-hide-on-mobile::text")[0].extract().strip().replace(' ·','')
+        try:
+            create_date = datetime.datetime.strptime(time, "%Y/%m/%d").date()
+        except Exception as e:
+            create_date = datetime.datetime.now().date()
 
         tags = response.css(".entry-meta-hide-on-mobile a::text").extract()
         for tag in tags:
@@ -64,7 +69,7 @@ class JobboleSpider(scrapy.Spider):
 
         article_item = JobboleArticleItem()
         article_item['title'] = title 
-        article_item['create_date'] = time 
+        article_item['create_date'] = create_date
         article_item['tags'] = tags
         article_item['url'] = response.url
         article_item['url_object_id'] = get_md5(response.url)

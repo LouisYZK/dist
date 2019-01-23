@@ -4,3 +4,5 @@
 *.o
 
 *.so
+spyder/.vscode/launch.json
+spyder/ArticleSpider/article.json
