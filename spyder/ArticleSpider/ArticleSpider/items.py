@@ -7,14 +7,20 @@
 
 import scrapy
 
+from scrapy.loader.processors import MapCompose
 
 class ArticlespiderItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
     pass
 
+def add_prefix(value):
+	return value + 'YZK_SPIDER'
+	
 class JobboleArticleItem(scrapy.Item):
-	title = scrapy.Field()
+	title = scrapy.Field(
+		input_processor = MapCompose(add_prefix)
+	)
 	create_date = scrapy.Field()
 	url = scrapy.Field()
 	url_object_id = scrapy.Field()
@@ -22,4 +28,3 @@ class JobboleArticleItem(scrapy.Item):
 	favor_num = scrapy.Field()
 	comment_num = scrapy.Field()
 	tags = scrapy.Field()
-

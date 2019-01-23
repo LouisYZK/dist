@@ -78,7 +78,7 @@ class JobboleSpider(scrapy.Spider):
         article_item['comment_num'] = comment_num
 
         yield article_item # Very Important!!
-
+        
     def extratc_num(self, string):
         match_info = re.match(r'.*(\d).*', string)
         if match_info:

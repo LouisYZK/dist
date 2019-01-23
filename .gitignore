@@ -6,3 +6,4 @@
 *.so
 spyder/.vscode/launch.json
 spyder/ArticleSpider/article.json
+spyder/.vscode/settings.json
