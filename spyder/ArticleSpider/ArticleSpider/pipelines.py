@@ -12,9 +12,11 @@ import MySQLdb.cursors
 from scrapy.exporters import JsonItemExporter
 from twisted.enterprise import adbapi
 
+
 class ArticlespiderPipeline(object):
     def process_item(self, item, spider):
         return item
+
 
 class JsonWithEncodingPipeline(object):
 	def __init__(self):

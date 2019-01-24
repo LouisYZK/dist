@@ -13,9 +13,9 @@ async def test(loop):
 	await u.save()
 
 import asyncio 
-# loop = asyncio.get_event_loop()
-# loop.run_until_complete(test(loop))
-# loop.close()
+loop = asyncio.get_event_loop()
+loop.run_until_complete(test(loop))
+loop.close()
 
 import inspect
 def test_func(a,b=1,*c,**kw):

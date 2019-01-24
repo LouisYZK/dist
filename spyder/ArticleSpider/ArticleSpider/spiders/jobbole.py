@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-import scrapy
+import datetime
 import re
-import datetime 
+from urllib import parse
 
+import scrapy
 from scrapy.http import Request
-from urllib import parse 
 
 from ArticleSpider.items import JobboleArticleItem
 from ArticleSpider.utils.common import get_md5
+
 
 class JobboleSpider(scrapy.Spider):
     name = 'jobbole'
@@ -27,7 +28,7 @@ class JobboleSpider(scrapy.Spider):
         next_page =  response.css(".next.page-numbers::attr(href)").extract_first("")
         # if next_page:
         #     yield Request(next_page, self.parse)
-    
+ 
     def parse_article(self, response):
         # title = response.css(".entry-header h1::text").extract()[0]  CSS-selector写法
         
@@ -68,7 +69,7 @@ class JobboleSpider(scrapy.Spider):
             print(e)
 
         article_item = JobboleArticleItem()
-        article_item['title'] = title 
+        article_item['title'] = title
         article_item['create_date'] = create_date
         article_item['tags'] = tags
         article_item['url'] = response.url
@@ -77,7 +78,7 @@ class JobboleSpider(scrapy.Spider):
         article_item['favor_num'] = favor_num
         article_item['comment_num'] = comment_num
 
-        yield article_item # Very Important!!
+        yield article_item  # Very Important!!
         
     def extratc_num(self, string):
         match_info = re.match(r'.*(\d).*', string)
@@ -85,5 +86,3 @@ class JobboleSpider(scrapy.Spider):
             return int(match_info.group(1))
         else:
             return 0
-
-
