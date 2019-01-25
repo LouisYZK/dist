@@ -4,8 +4,15 @@
 *.o
 
 *.so
+*.json
+*.css
+*.js
+
 spyder/.vscode/launch.json
 spyder/ArticleSpider/article.json
 spyder/.vscode/settings.json
 pywebapp/.vscode/settings.json
 pywebapp/.vscode/launch.json
+pywebapp/www/favicon.ico
+pywebapp/www/static
+
