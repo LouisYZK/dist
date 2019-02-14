@@ -279,15 +279,16 @@ future对象对协程包装成结果容器，使其可以像多线程中的futur
 
 
 最终结果：
+
 ![](Figure_1.png)
 
 可以看出在requests库+多线程上面套用异步是无效的，而aiohttp的多线程并没有效率上的明显提升。
 
 
 ## 参考资料
-[1] [dongweiming的博客](http://www.dongwm.com/post/80/)
-[2] [segmentFault问答](https://segmentfault.com/a/1190000012631063)
-[3] [Asyncio官方文档](https://docs.python.org/3/library/asyncio-task.html#task-object)
-[4] [Awesome-asyncio](https://github.com/timofurrer/awesome-asyncio)
-[5] [《流畅的Python》](https://www.amazon.cn/dp/B072HMKKPG/ref=sr_1_1?ie=UTF8&qid=1550152947&sr=8-1&keywords=%E6%B5%81%E7%95%85%E7%9A%84python)
-[6] PyCon 2017\2018 相关内容
+- [1] [dongweiming的博客](http://www.dongwm.com/post/80/)
+- [2] [segmentFault问答](https://segmentfault.com/a/1190000012631063)
+- [3] [Asyncio官方文档](https://docs.python.org/3/library/asyncio-task.html#task-object)
+- [4] [Awesome-asyncio](https://github.com/timofurrer/awesome-asyncio)
+- [5] [《流畅的Python》](https://www.amazon.cn/dp/B072HMKKPG/ref=sr_1_1?ie=UTF8&qid=1550152947&sr=8-1&keywords=%E6%B5%81%E7%95%85%E7%9A%84python)
+- [6] PyCon 2017\2018 相关内容
