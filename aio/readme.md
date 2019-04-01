@@ -275,6 +275,8 @@ future对象对协程包装成结果容器，使其可以像多线程中的futur
 - asyncio + aiohttp +SingleThread
 - asyncio + Multiporcess (这个我直接选用了库[aiomultiporcess](https://github.com/jreese/aiomultiprocess))
 
+还有一个国内开发者基于asyncio和aiohttp写的一个scrapy-like的爬虫框架[ruia](https://github.com/howie6879/ruia)， 速度也不错；
+
 完整的代码[在这里](https://github.com/LouisYZK/dist/tree/master/aio/test_spider)
 
 
