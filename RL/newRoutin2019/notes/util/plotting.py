@@ -44,7 +44,7 @@ def plot_value_function(V, title="Value Function"):
     Z_ace = np.apply_along_axis(lambda _: V[(_[0], _[1], True)], 2, np.dstack([X, Y]))
 
     def plot_surface(X, Y, Z, title):
-        fig = plt.figure(figsize=(20, 10))
+        fig = plt.figure(figsize=(10, 5))
         ax = fig.add_subplot(111, projection='3d')
         surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
                                cmap=matplotlib.cm.coolwarm, vmin=-1.0, vmax=1.0)
