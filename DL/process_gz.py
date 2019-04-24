@@ -66,14 +66,27 @@ def load_mnist(path, kind='train'):
     return images, labels
 
 
-X_train, y_train = load_mnist('', kind='train')
-X_test, y_test = load_mnist('', kind='t10k')
+# X_train, y_train = load_mnist('', kind='train')
+# X_test, y_test = load_mnist('', kind='t10k')
 
 
-import numpy as np
+# import numpy as np
 
-np.savez_compressed('mnist_scaled.npz', 
-                    X_train=X_train,
-                    y_train=y_train,
-                    X_test=X_test,
-                    y_test=y_test)
+# np.savez_compressed('mnist_scaled.npz', 
+#                     X_train=X_train,
+#                     y_train=y_train,
+#                     X_test=X_test,
+#                     y_test=y_test)
+
+def fn(A):
+    print(A, '...')
+    return A**2
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
+with ThreadPoolExecutor() as e:
+    fn_pool = e.map(fn, [1, 2, 3, 4])
+    for future in fn_pool:
+        print('res:', future)
+
+
+    
