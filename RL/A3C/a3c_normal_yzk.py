@@ -18,28 +18,29 @@ A_BOUND = [env.action_space.low, env.action_space.high]
 ENTROPY_BETA = 0.01
 
 class  ACNet():
-	def __init__(self,scope,globalAC = None):
+	def __init__(self, scope, globalAC=None):
 		if scope == 'global_net':
 			with tf.variable_scope(scope):
-				self.s = tf.placeholder(tf.float32, [None,N_S], name = 's')
+				self.s = tf.placeholder(tf.float32, [None,N_S], name='s')
 				self.a_params, self.c_params = self._build_network(scope)[-2:]
 		else:
 			with tf.variable_scope(scope):
-				self.s = tf.placeholder(tf.float32, [None,N_S], name = 's')
-				self.a_his = tf.placeholder(tf.float32, [None,N_A], name = 'a_his')
-				self.v_target = tf.placeholder(tf.float32, [None,1],name = 'v_target')
-				mu, sigma ,self.v , self.a_params, self.c_params = self._build_network(scope)
-				td = tf.subtract(self.v_target, self.v,name = 'TD_error')
+				self.s = tf.placeholder(tf.float32, [None, N_S], name='s')
+				self.a_his = tf.placeholder(tf.float32, [None, N_A], name='a_his')
+				self.v_target = tf.placeholder(tf.float32, [None, 1], name='v_target')
+				mu, sigma, self.v, self.a_params, self.c_params = self._build_network(scope)
+				td = tf.subtract(self.v_target, self.v, name='TD_error')
 				with tf.name_scope('c_loss'):
 					self.c_loss = tf.reduce_mean(tf.square(td))
 				with tf.name_scope('wrap_a_out'):
-					mu, sigma = mu*A_BOUND[1], sigma + 1e-4
+					mu, sigma = mu * A_BOUND[1], sigma + 1e-4
 
 				norm_dist = tf.distributions.Normal(mu,sigma)
+
 				with tf.name_scope('a_loss'):
 					entropy = norm_dist.entropy()
 					a_prob = norm_dist.log_prob(self.a_his)
-					self.exp_v = a_prob*tf.stop_gradient(td) + entropy*ENTROPY_BETA
+					self.exp_v = a_prob * tf.stop_gradient(td) + entropy * ENTROPY_BETA
 					self.a_loss = tf.reduce_mean(-self.exp_v)
 				with tf.name_scope('local_grad'):
 					self.a_grad = tf.gradients(self.a_loss, self.a_params)
@@ -60,25 +61,25 @@ class  ACNet():
 		"""
 		w_init = tf.random_normal_initializer(0., .1)
 		with tf.variable_scope('actor_net'):
-			l_a = tf.layers.dense(self.s,200,tf.nn.relu6, kernel_initializer = w_init, name = 'la')
-			mu = tf.layers.dense(l_a,N_A,tf.nn.tanh, kernel_initializer = w_init, name = 'mu')
-			sigma = tf.layers.dense(l_a,N_A,tf.nn.softplus, kernel_initializer = w_init, name = 'sigma')
+			l_a = tf.layers.dense(self.s, 200, tf.nn.relu6, kernel_initializer=w_init, name='la')
+			mu = tf.layers.dense(l_a, N_A, tf.nn.tanh, kernel_initializer=w_init, name='mu')
+			sigma = tf.layers.dense(l_a, N_A, tf.nn.softplus, kernel_initializer=w_init, name='sigma')
 		with tf.variable_scope('critic_net'):
-			l_c = tf.layers.dense(self.s, 100,tf.nn.relu6, kernel_initializer = w_init, name = 'lc')
-			v = tf.layers.dense(l_c,1,kernel_initializer = w_init,name = 'v')
+			l_c = tf.layers.dense(self.s, 100,tf.nn.relu6, kernel_initializer=w_init, name = 'lc')
+			v = tf.layers.dense(l_c, 1, kernel_initializer=w_init, name='v')
 		a_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope = scope +'/actor_net')
 		c_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope = scope + '/critic_net')
 		return mu, sigma, v ,a_params, c_params
 
 	def update_global(self,feed_dict):
-		SESS.run([self.update_a_op,self.update_c_op], feed_dict)
+		SESS.run([self.update_a_op, self.update_c_op], feed_dict)
 
 	def pull_global(self):
 		SESS.run([self.pull_a_op, self.pull_c_op])
 
 	def choose_action(self,s):
-		s = s[np.newaxis,:]
-		return SESS.run(self.a_choose,{self.s:s})
+		s = s[np.newaxis, :]
+		return SESS.run(self.a_choose, {self.s: s})
 
 MAX_GLOBAL_STEP = 2000
 MAX_EPISODE_STEP = 200
@@ -146,7 +147,7 @@ if __name__ == '__main__':
 	# SESS = tf.Session()
 	SESS  = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 	N_WORKERS = multiprocessing.cpu_count()
-	with tf.device("/gpu:0"):
+	with tf.device("/cpu:0"):
 		OPT_A = tf.train.RMSPropOptimizer(LR_A, name='RMSPropA')
 		OPT_C = tf.train.RMSPropOptimizer(LR_C, name='RMSPropC')
 		GLOBAL_AC = ACNet('global_net')  # we only need its params
