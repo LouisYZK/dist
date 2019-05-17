@@ -58,8 +58,8 @@ class  ACNet():
 	def _build_network(self,scope):
 		"""
 			Continous Envirnment
-		"""
-		w_init = tf.random_normal_initializer(0., .1)
+		"""w_init = tf.random_normal_initializer(0., .1)
+		
 		with tf.variable_scope('actor_net'):
 			l_a = tf.layers.dense(self.s, 200, tf.nn.relu6, kernel_initializer=w_init, name='la')
 			mu = tf.layers.dense(l_a, N_A, tf.nn.tanh, kernel_initializer=w_init, name='mu')
