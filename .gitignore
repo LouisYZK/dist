@@ -7,7 +7,8 @@
 *.json
 *.css
 *.js
-
+*.gif
+*.v2
 spyder/.vscode/launch.json
 spyder/ArticleSpider/article.json
 spyder/.vscode/settings.json
